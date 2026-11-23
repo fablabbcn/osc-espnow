@@ -16,8 +16,8 @@
   At startup each board blinks its own 3-colour ID (see "Board ID colours").
 
   Two tabs:
-    touch_osc_espnow.ino   this example: touch pads, colours, the conversation
-    EspNowOsc.h            the toolbox: how OSC messages travel over ESP-NOW
+    osc-espnow.ino   this example: touch pads, colours, the conversation
+    EspNowOsc.h      the toolbox: how OSC messages travel over ESP-NOW
 
   Board settings (Tools menu): "ESP32S3 Dev Module", USB CDC On Boot: Enabled
   Core: "esp32 by Espressif Systems" version 3.3.x (touch is broken in 4.0.0)

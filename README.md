@@ -52,6 +52,15 @@ Stuck? Go to **[Help](#help)** at the end.
 - 2 USB-C cables that carry **data**. Some cables only charge, and with those the computer never sees the board.
 - Arduino IDE
 
+### Get the code
+
+The Arduino IDE needs the folder to have **the same name as the `.ino` file**: `osc-espnow`.
+
+- **With git:** `git clone https://github.com/fablabbcn/osc-espnow.git` gives you the folder `osc-espnow`, ready to open.
+- **Without git:** on the GitHub page, **Code → Download ZIP**, unzip it, and **rename the folder** from `osc-espnow-main` to `osc-espnow`.
+
+Then open `osc-espnow.ino`. You should see **two tabs**: `osc-espnow` and `EspNowOsc.h`. If you only see one, the folder name is wrong.
+
 ### Install
 
 1. **Tools → Board → Boards Manager**, search **esp32 by Espressif Systems**, choose version **3.3.13** in the dropdown, and install.
@@ -83,7 +92,7 @@ The colours come from the board's MAC address, its unique hardware number (more 
 
 ### Make it your team
 
-Every **pair** of boards in the room needs its own **team name**, so your boards don't react to the other pairs. Use the colour ID of **one of your two boards**. Open `touch_osc_espnow.ino` and change this line:
+Every **pair** of boards in the room needs its own **team name**, so your boards don't react to the other pairs. Use the colour ID of **one of your two boards**. Open `osc-espnow.ino` and change this line:
 
 ```cpp
 #define TEAM "/yellow-blue-blue"
@@ -180,7 +189,7 @@ The sketch has **two tabs** in the Arduino IDE, one for each job:
 
 | Tab | What's inside |
 |---|---|
-| `touch_osc_espnow.ino` | **this example**: touch pads, colours, board ID, the conversation |
+| `osc-espnow.ino` | **this example**: touch pads, colours, board ID, the conversation |
 | `EspNowOsc.h` | **the postman**: everything that makes OSC travel over ESP-NOW. You can reuse it in any project (Part 3). |
 
 The code in 2.4 and 2.5 is in the `EspNowOsc.h` tab.
