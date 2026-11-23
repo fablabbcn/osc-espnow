@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+._*
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Linux
+*~
+
+# Editors and IDEs
+.vscode/
+.idea/
+.theia/
+*.swp
+
+# Arduino / arduino-cli build output
+build/
+*.bin
+*.elf
+*.hex
+*.map
