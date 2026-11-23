@@ -1,46 +1,27 @@
 # OSC in the field, with ESP-NOW
 
-## Where we are
+Last week you sent **OSC over [Wi-Fi](https://en.wikipedia.org/wiki/Wi-Fi)**: every board joined the same network, and messages went through a [router](https://en.wikipedia.org/wiki/Router_(computing)).
 
-Last week you sent **OSC over [Wi-Fi](https://en.wikipedia.org/wiki/Wi-Fi)**. Every board joined the same Wi-Fi network, and the messages went through a [router](https://en.wikipedia.org/wiki/Router_(computing)) to reach the other board or your computer.
+That works in the lab. On site (a street, a park, an empty building) there is usually no Wi-Fi you can use. This week the boards talk **directly to each other** with **ESP-NOW**. You keep the OSC you know and drop the router. Bring your boards and a USB power bank, and it works wherever you are.
 
-That works in the lab. But when you take your intervention **to the site** (a street, a park, a market, an empty building), there is usually no Wi-Fi you can use: you don't know the password, the signal doesn't reach, or there's no router at all.
+## The example
 
-This week we do **OSC without a central Wi-Fi**. The boards talk **directly to each other** using **ESP-NOW**. You keep the OSC you already know and drop the router. Bring your boards and a USB power bank, and it works wherever you are.
-
-## The example: Touch → OSC → ESP-NOW → NeoPixel
-
-The smallest version of that idea: two Barduinos talking through the air, with no network and no cables.
-
-**Touch a pad on one board, and the coloured light (the NeoPixel) on the other board turns on.** It works both ways.
-
-| Pad | Colour |
-|-----|--------|
-| T7  | red    |
-| T4  | green  |
-| T5  | blue   |
-| T6  | white  |
-
-Touch two pads at once and the colours mix: red + green = yellow.
+**Touch pad T7 on one board, and the NeoPixel on the other board turns white.** Let go, and it turns off. It works both ways, and both boards run **the same sketch**.
 
 ```
-   Board A                                         Board B
-   touch T7  ───── "show red!" ─────────────────►  NeoPixel turns red
-   LED blinks ◄──── "ok, I'm red" ───────────────┘
+   Board A                                        Board B
+   touch T7  ──── "show white!" ───────────────►  NeoPixel turns white
+   LED blinks ◄─── "ok, showing it" ────────────┘
 ```
 
-Both boards run **the same sketch**. Each one sends and receives.
+| Part | What you get |
+|---|---|
+| **[1. Get it running](#part-1-get-it-running)** | the example working on your two boards |
+| **[2. How it works](#part-2-how-it-works)** | what happens inside, step by step |
+| **[3. Use it in your own OSC sketches](#part-3-use-it-in-your-own-osc-sketches)** | turn your Wi-Fi OSC projects into ESP-NOW |
+| **[4. Out in the real world](#part-4-out-in-the-real-world)** | distance, walls, many boards |
 
-### How to read this page
-
-| Part | What you get | When |
-|---|---|---|
-| **[1. Get it running](#part-1-get-it-running)** | the example working on your two boards, with your team name | now |
-| **[2. How it works](#part-2-how-it-works)** | what happens inside, step by step | after it works |
-| **[3. Use it in your own OSC sketches](#part-3-use-it-in-your-own-osc-sketches)** | turn your Wi-Fi OSC projects into ESP-NOW | when you build your own |
-| **[4. Out in the real world](#part-4-out-in-the-real-world)** | distance, walls, many boards | before an installation or a show |
-
-Stuck? Go to **[Help](#help)** at the end.
+Stuck? See **[Help](#help)** at the end.
 
 ---
 
@@ -48,215 +29,168 @@ Stuck? Go to **[Help](#help)** at the end.
 
 ### What you need
 
-- 2 Barduinos (4.0.2) **with the NeoPixel soldered on**
-- 2 USB-C cables that carry **data**. Some cables only charge, and with those the computer never sees the board.
+- 2 Barduinos 4.0.2, **with the NeoPixel soldered on**
+- 2 USB-C cables that carry **data** (charge-only cables don't work)
 - Arduino IDE
 
-### Get the code
+### Get the code and install
 
-The Arduino IDE needs the folder to have **the same name as the `.ino` file**: `osc-espnow`.
-
-- **With git:** `git clone https://github.com/fablabbcn/osc-espnow.git` gives you the folder `osc-espnow`, ready to open.
-- **Without git:** on the GitHub page, **Code → Download ZIP**, unzip it, and **rename the folder** from `osc-espnow-main` to `osc-espnow`.
-
-Then open `osc-espnow.ino`. You should see **two tabs**: `osc-espnow` and `EspNowOsc.h`. If you only see one, the folder name is wrong.
-
-### Install
-
-1. **Tools → Board → Boards Manager**, search **esp32 by Espressif Systems**, choose version **3.3.13** in the dropdown, and install.
-   > ⚠️ **Not 4.0.0.** In that version the touch pads don't work at all.
-2. **Tools → Manage Libraries**, search and install **OSC** by Adrian Freed. It's the same OSC library you use for Wi-Fi.
-3. In the **Tools** menu:
-   - Board: **ESP32S3 Dev Module**
-   - USB CDC On Boot: **Enabled** (without it, the Serial Monitor stays empty)
-   - Everything else as on the [Barduino setup page](https://fablabbcn-projects.gitlab.io/electronics/barduino-docs/GettingStarted/arduinoIDE/)
+1. **Get the folder.** `git clone https://github.com/fablabbcn/osc-espnow.git`, or **Code → Download ZIP** and rename the unzipped folder from `osc-espnow-main` to `osc-espnow`. The folder must have the same name as the `.ino` file.
+2. **Open `osc-espnow.ino`.** You should see **two tabs**: `osc-espnow` and `EspNowOsc.h`.
+3. **Tools → Board → Boards Manager**: install **esp32 by Espressif Systems**, version **3.3.13**.
+   > ⚠️ **Not 4.0.0.** In that version the touch pads don't work.
+4. **Tools → Manage Libraries**: install **OSC** by Adrian Freed (the same one you used for Wi-Fi).
+5. **Tools**: Board **ESP32S3 Dev Module**, USB CDC On Boot **Enabled**. The rest as on the [Barduino setup page](https://fablabbcn-projects.gitlab.io/electronics/barduino-docs/GettingStarted/arduinoIDE/).
 
 ### Upload and meet your boards
 
-1. Upload the sketch to **both** boards.
-   If the upload fails: hold **BOOT**, press **RESET**, release **BOOT**, and upload again.
-2. Open the Serial Monitor (115200) and press **RESET** on the board. **Don't touch the pads while it starts**: it is measuring them.
-3. Watch the NeoPixel: it blinks **three colours**, for example *yellow, blue, blue*. That's the board's **colour ID**. It never changes, and every board has its own.
-4. The Serial Monitor shows the same thing:
-   ```
-   My MAC address: 10:20:BA:14:30:94
-   My board ID:    yellow-blue-blue
-   Calibrating touch pads, don't touch them...
-     pad red   (T7) baseline 283836
-     ...
-   Ready. Touch a pad!
-   ```
-5. Write down the colours of both of your boards. A sticker on each board helps.
+1. Upload the sketch to **both** boards. If it fails: hold **BOOT**, press **RESET**, release **BOOT**, upload again.
+2. Press **RESET** and **don't touch the pad** while the board starts: it is measuring it.
+3. The NeoPixel blinks **three colours**, one second each, e.g. *yellow, blue, blue*. That's the board's **name**. Press **BOOT** to see it again.
+4. Write down both names. A sticker on each board helps.
 
-The colours come from the board's MAC address, its unique hardware number (more about it in Part 2). The number is mixed with a [hash function](https://en.wikipedia.org/wiki/Hash_function), so two boards with almost the same number still get very different colours.
+Nobody chooses the name: it comes from the board's [MAC address](https://en.wikipedia.org/wiki/MAC_address), a number fixed in every chip. A [hash function](https://en.wikipedia.org/wiki/Hash_function) mixes it first, so boards with almost the same MAC still get very different colours.
 
-### Make it your team
+### Pair your two boards
 
-Every **pair** of boards in the room needs its own **team name**, so your boards don't react to the other pairs. Use the colour ID of **one of your two boards**. Open `osc-espnow.ino` and change this line:
+At first a board listens to **every** board in the room. In class, that means everyone's touches light up everyone's NeoPixel. So tell each board the name of the **other** one. In `osc-espnow.ino`:
 
 ```cpp
-#define TEAM "/yellow-blue-blue"
+const char *PARTNER = "magenta-blue-green";   // on board yellow-blue-blue
+const char *PARTNER = "yellow-blue-blue";     // on board magenta-blue-green
 ```
 
-Upload again to **both** boards, with the same team name.
+Upload each board with its own line.
 
-> **Can two pairs get the same colours?** With 3 colours there are 216 possible IDs. In a room of 12 boards, there's about a 1 in 4 chance that two boards share an ID, so look around when everyone starts their boards. If your team name is already taken, use your other board's colours.
+> **Can two boards have the same name?** There are 6 × 6 × 6 = **216** names. In a room of 12 boards there's about a 1 in 4 chance that two share one (the [birthday problem](https://en.wikipedia.org/wiki/Birthday_problem)). It only matters if it's your partner's name: then swap one board.
 
 ### Play
 
-Touch a pad on one board and look at the **other** board. 🎉
+Touch T7 on one board and look at the **other** one. 🎉
 
 ### Reading the Serial Monitor
 
-The Serial Monitor is where the board tells you what it's doing, line by line. It is your best friend when something doesn't work.
+The Serial Monitor is where the board tells you what it's doing.
 
-**Open it:**
+1. **Tools → Port**: your board (`/dev/cu.usbmodem…` on Mac, `COM…` on Windows).
+2. **Tools → Serial Monitor**, speed **115200**. Press **RESET** to see everything from the start.
 
-1. **Tools → Port**: choose your board (`/dev/cu.usbmodem…` on Mac, `COM…` on Windows).
-2. **Tools → Serial Monitor**, or the magnifying-glass icon at the top right.
-3. Set the speed to **115200 baud** (dropdown at the bottom). Strange characters mean the speed is wrong.
-4. Press **RESET** on the board to see everything from the start.
+One monitor shows one board. To watch both, open a second Arduino IDE window with the other port.
 
-One Serial Monitor shows **one board**. To watch both boards at the same time, open a second Arduino IDE window and pick the other port there.
+![Serial Monitor of board green-red-red receiving white and off from board magenta-blue-green](images/serial-monitor.png)
 
-![Serial Monitor of board green-red-red receiving colours from board magenta-blue-green](images/serial-monitor.png)
+*Board `green-red-red` receiving from `magenta-blue-green`, a few centimetres away: -18 to -26 dBm, full bars.*
 
-*Board `green-red-red` receiving colours from board `magenta-blue-green`. (Here the team name was still the default `/team1`.)*
-
-**One line, piece by piece:**
+At startup:
 
 ```
-<- /team1/led 255 0 0 from board magenta-blue-green (signal -79 dBm)
+My MAC address: 10:20:BA:14:30:94
+My name:        yellow-blue-blue
+Partner:        magenta-blue-green
+Measuring the touch pad, don't touch it...
+  baseline 283836
+Ready. Touch the pad!
 ```
 
-| Piece | Meaning |
-|---|---|
-| `<-` | a message **arrived**. `->` means this board **sent** one. |
-| `/team1/led` | the OSC address: team name + what to do |
-| `255 0 0` | the values: red, green, blue (here: red) |
-| `from board magenta-blue-green` | **who** sent it: the colour ID of the other board |
-| `(signal -79 dBm)` | **how strong** the signal was (see below) |
-
-**All the lines you can see:**
+Then, while you play:
 
 | Line | What happened |
 |---|---|
-| `-> /team1/led 255 0 0` | you touched a pad: this board sent a colour |
-| `<- /team1/led 255 0 0 from board …` | the other board sent you a colour; your NeoPixel shows it |
-| `<- /team1/led 0 0 0 from board …` | the other person let go of the pads: light off |
-| `<- ack: partner shows the colour` | the other board confirmed. Your small red LED blinks. |
-| `no ack yet, resending` | no answer yet, trying again. Once in a while is fine; often means a weak signal. |
-| `no answer from partner…` | it gave up after 5 tries |
-| `radio: delivery failed` | the other radio didn't confirm a message sent only to it |
+| `-> /yellow-blue-blue/led 255 255 255` | you touched the pad: this board sent white |
+| `<- /magenta-blue-green/led 255 255 255  ■■■□□ -72 dBm` | the other board sent white; your NeoPixel shows it |
+| `<- /magenta-blue-green/led 0 0 0  …` | the other person let go: light off |
+| `<- /magenta-blue-green/ack: partner shows the colour  ■■■□□ -74 dBm` | the other board confirmed; your small red LED blinks |
+| `no ack yet, resending` | no answer yet, trying again. Often means a weak signal. |
+| `no answer…` | it gave up after 5 tries |
 
-**Reading the signal number:**
+**The signal.** `■■■□□ -72 dBm` is how strong the message arrived. The number is in [dBm](https://en.wikipedia.org/wiki/DBm), always negative: **closer to 0 = stronger**. The radio stops hearing around **-98 dBm** [4], so the gap between your number and -98 is your safety margin.
 
-The signal is in [dBm](https://en.wikipedia.org/wiki/DBm), always a negative number. **Closer to 0 = stronger.**
-
-- -40 is stronger than -80.
-- According to Espressif's datasheet, the radio can still receive messages down to about **-98 dBm**, in ideal conditions. [4]
-- The distance between your number and -98 is your **safety margin**: room for people walking by, walls, other Wi-Fi.
-
-| Signal | Margin | In practice |
+| Bars | Signal | In practice |
 |---|---|---|
-| -30 to -70 | lots | solid |
-| -70 to -85 | OK | works; in a busy room you may see some resending |
-| -85 to -95 | small | close to the edge: expect lost messages |
-| below -95 | none | about to lose contact |
+| ■■■■■ ■■■■□ | above -65 | solid |
+| ■■■□□ ■■□□□ | -65 to -85 | works; some resending in a busy room |
+| ■□□□□ □□□□□ | below -85 | at the edge: expect lost messages |
 
-*(Rough guide, based on that -98 dBm limit.)*
-
-The number jumps a few dBm on every line: that's normal. Look at the **trend**, not at one line. In the screenshot two boards on the same table read -76 to -82: OK, but not strong. **Try it:** turn one board around, put your hand over the antenna (the zigzag line at the end of the silver module), lift it up, and watch the number change.
+The number jumps a bit on every line; look at the trend. **Try it:** cover the antenna (the zigzag line at the end of the silver module) with your hand, or turn a board around, and watch it change.
 
 ---
 
 ## Part 2. How it works
 
-The project has three layers. It helps to think of sending a letter:
+Think of sending a letter:
 
 ```
-  touch pad   →   OSC message      →   ESP-NOW            →   NeoPixel
-  (something      (the letter:         (the postman:          (something
-   happens)        what to say)         how it travels)        happens)
+  touch pad   →   OSC message    →   ESP-NOW           →   NeoPixel
+                  (the letter)       (the postman)
 ```
 
-- **[OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)** is the *letter*. You already know it: an address like `/yellow-blue-blue/led` plus some values like `255 0 0`.
-- **ESP-NOW** is the *postman*. It carries the letter through the air, from one board to the other.
+- **[OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)** is the *letter*: an address like `/yellow-blue-blue/led` and values like `255 255 255`. You already know it.
+- **ESP-NOW** is the *postman*: it carries the letter through the air.
 
-Usually OSC travels over [Wi-Fi](https://en.wikipedia.org/wiki/Wi-Fi) with [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol). Here we keep the letter and change the postman.
-
-The sketch has **two tabs** in the Arduino IDE, one for each job:
+Last week the postman was Wi-Fi with [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol). We keep the letter and change the postman. The two tabs follow that split:
 
 | Tab | What's inside |
 |---|---|
-| `osc-espnow.ino` | **this example**: touch pads, colours, board ID, the conversation |
-| `EspNowOsc.h` | **the postman**: everything that makes OSC travel over ESP-NOW. You can reuse it in any project (Part 3). |
+| `osc-espnow.ino` | **this example**: board name, touch pad, the conversation |
+| `EspNowOsc.h` | **the postman**: everything that makes OSC travel over ESP-NOW. Reusable in any project (Part 3). |
 
-The code in 2.4 and 2.5 is in the `EspNowOsc.h` tab.
+### 2.1 From a finger to a message
 
-### 2.1 ESP-NOW in one minute
+`touchRead()` gives a number, and a finger makes it go **up**. At startup the board measures the pad untouched (the *baseline*). Touched means: clearly above it.
 
-ESP-NOW is made by Espressif, the company that makes the [ESP32](https://en.wikipedia.org/wiki/ESP32) chip on the Barduino. It lets ESP32 boards send short messages **straight to each other** using the Wi-Fi radio, without joining any network.
+```cpp
+bool isTouched() {
+  return touchRead(TOUCH_PIN) > baseline * TOUCH_THRESHOLD;
+}
+```
 
-| | Wi-Fi + UDP (what you know) | ESP-NOW |
+`readTouchPad()` runs every 20 ms, but only sends when something **changes**:
+
+```cpp
+bool touched = isTouched();
+if (touched == wasTouched) return;   // nothing new: send nothing
+wasTouched = touched;
+
+if (touched) startSending(SEND_R, SEND_G, SEND_B);   // white
+else         startSending(0, 0, 0);                  // off
+```
+
+Without that check, holding your finger down would send 50 messages a second. To send another colour, change `SEND_R`, `SEND_G`, `SEND_B` in the settings.
+
+### 2.2 ESP-NOW in one minute
+
+ESP-NOW is made by Espressif, who make the [ESP32](https://en.wikipedia.org/wiki/ESP32) chip on the Barduino. Boards send short messages **straight to each other** with the Wi-Fi radio, without joining a network.
+
+| | Wi-Fi + UDP (last week) | ESP-NOW |
 |---|---|---|
-| Needs a [router](https://en.wikipedia.org/wiki/Router_(computing)) and a password | yes | **no** |
-| How you address a board | [IP address](https://en.wikipedia.org/wiki/IP_address) (`192.168.1.20`) | **[MAC address](https://en.wikipedia.org/wiki/MAC_address)** (`10:20:BA:14:30:94`) |
-| Ready to send | after a few seconds (connecting…) | **immediately** |
+| Router and password | needed | **not needed** |
+| A board's address | [IP address](https://en.wikipedia.org/wiki/IP_address) `192.168.1.20` | **MAC address** `10:20:BA:14:30:94` |
+| Ready to send | after connecting | **immediately** |
 | Max message size | about 1400 bytes | **250 bytes** |
 
-### 2.2 Addresses: MAC
+- **Broadcast vs unicast.** The address `FF:FF:FF:FF:FF:FF` means **everyone**: a [broadcast](https://en.wikipedia.org/wiki/Broadcasting_(networking)), like shouting in a room. Sending to one MAC is [unicast](https://en.wikipedia.org/wiki/Unicast), like talking to one person.
+- **Channel.** The radio works on [channels](https://en.wikipedia.org/wiki/List_of_WLAN_channels), like radio stations. Boards only hear each other on the **same** one: `ESPNOW_CHANNEL` in the settings.
 
-Every ESP32 has a **MAC address**: 6 numbers, fixed in the chip, like a name tag. It's printed when the sketch starts. ESP-NOW uses it the way UDP uses an IP address.
+### 2.3 Starting ESP-NOW
 
-One special address, `FF:FF:FF:FF:FF:FF`, means **everyone**. Sending to it is called a [broadcast](https://en.wikipedia.org/wiki/Broadcasting_(networking)). Sending to one specific MAC is called [unicast](https://en.wikipedia.org/wiki/Unicast).
-
-- Broadcast = shouting in a room
-- Unicast = talking to one person
-
-### 2.3 Channel: tune to the same station
-
-The Wi-Fi radio works on [channels](https://en.wikipedia.org/wiki/List_of_WLAN_channels), like a radio has stations. Two boards only hear each other on the **same channel**. In the sketch:
+In the sketch you write one line, `setupEspNow(ESPNOW_CHANNEL);`. Inside `EspNowOsc.h` it does:
 
 ```cpp
-const uint8_t ESPNOW_CHANNEL = 1;
-```
-
-### 2.4 Starting ESP-NOW: four steps
-
-In the sketch you only write `setupEspNow(ESPNOW_CHANNEL);`. Inside, in the `EspNowOsc.h` tab, it does this:
-
-```cpp
-WiFi.mode(WIFI_STA);                                   // 1. switch the radio on
-esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);  //    and tune the channel
+WiFi.mode(WIFI_STA);                                   // 1. radio on, tuned to the channel
+esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
 esp_now_init();                                        // 2. start ESP-NOW
-esp_now_register_recv_cb(onDataReceived);              // 3. "call this function when a message arrives"
-esp_now_register_send_cb(onDataSent);                  //    "call this one when a message has been sent"
-addPeer(BROADCAST_MAC);                                // 4. add who we want to talk to
+esp_now_register_recv_cb(onDataReceived);              // 3. "call this when a message arrives"
+esp_now_register_send_cb(onDataSent);                  //    "call this when one has been sent"
+addPeer(BROADCAST_MAC);                                // 4. add who we talk to
 ```
 
-About step 4: before sending to an address, ESP-NOW needs it in its list of **peers**, like saving a contact before you text someone. We save "everyone" (broadcast) at the start. `sendOsc()` saves any other address for you the first time you send to it.
+Before sending to an address, ESP-NOW needs it in its list of **peers**, like saving a contact before texting. `sendOsc()` does it for you.
 
-After that, sending is one line:
+### 2.4 Receiving: a doorbell and a mailbox
 
-```cpp
-esp_now_send(address, bytes, howManyBytes);
-```
-
-### 2.5 Receiving: a doorbell and a mailbox
-
-You never call `onDataReceived()` yourself. ESP-NOW calls it for you when a message arrives, a bit like a **doorbell**. Programmers call this a [callback](https://en.wikipedia.org/wiki/Callback_(computer_programming)).
-
-The doorbell can ring **at any moment**, even in the middle of your `loop()`. So the rule is: **don't do real work at the door.** The callback only drops the message into a **mailbox** (a [queue](https://en.wikipedia.org/wiki/Message_queue)), and `loop()` opens the mailbox when it's ready:
+ESP-NOW calls `onDataReceived()` by itself when a message arrives, like a **doorbell**. This is a [callback](https://en.wikipedia.org/wiki/Callback_(computer_programming)). It can ring at any moment, even in the middle of `loop()`, so it does no real work: it only drops the message in a **mailbox** (a [queue](https://en.wikipedia.org/wiki/Message_queue)). `loop()` empties the mailbox when it's ready:
 
 ```cpp
-// in EspNowOsc.h: the doorbell
-void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
-  // copy the message, then drop it in the mailbox:
-  xQueueSend(inbox, &p, 0);
-}
-
-// in your sketch: open the mailbox
 void loop() {
   Packet p;
   while (receivePacket(p)) {   // take out each message
@@ -266,127 +200,95 @@ void loop() {
 }
 ```
 
-Each message (`Packet`) tells you who sent it (`p.from`), the bytes (`p.data`, `p.len`) and the signal strength (`p.rssi`, more in Part 4).
+Each `Packet` has who sent it (`p.from`), the bytes (`p.data`, `p.len`) and the signal strength (`p.rssi`).
 
-### 2.6 Talking both ways: "got it!"
+### 2.5 Talking both ways: "got it!"
 
-The colour is sent as a **broadcast**, so you never have to type a MAC address. But when you shout in a room, you don't know if anyone heard you. The radio doesn't tell you either.
+The colour goes out as a **broadcast**, and nobody confirms a broadcast. So the receiving board **answers** by unicast, straight back to the sender: an [acknowledgement](https://en.wikipedia.org/wiki/Acknowledgement_(data_networks)), or "ack".
 
-So the receiving board **answers**: "ok, I'm showing red". That answer is called an [acknowledgement](https://en.wikipedia.org/wiki/Acknowledgement_(data_networks)), or "ack". It goes by **unicast**, straight back to the board that sent the colour.
+- Ack arrives → the small red LED blinks.
+- No ack within 0.2 s → send again, up to 5 times.
 
-- Answer arrives → the small red LED (GPIO 48) blinks once: *your message arrived*.
-- No answer within 0.2 seconds → the board **sends again** (up to 5 times), and then tells you in the Serial Monitor: `no answer from partner`.
+### 2.6 OSC on top of ESP-NOW
 
-That's what makes the conversation go **both ways**.
-
-### 2.7 OSC on top of ESP-NOW
-
-An OSC message is just a row of bytes, and ESP-NOW carries bytes. So the OSC code is the one you know, and only the sending line is new.
-
-**Sending.** With UDP you wrote `Udp.beginPacket()` → `msg.send(Udp)` → `Udp.endPacket()`. Here, `sendOsc()` packs the message into bytes and gives them to ESP-NOW:
+An OSC message is a row of bytes, and ESP-NOW carries bytes. So the OSC code is the one you know; only the sending line changes.
 
 ```cpp
-OSCMessage msg(TEAM "/led");
+// sending
+OSCMessage msg("/yellow-blue-blue/led");
 msg.add((int32_t)255);   // red
-msg.add((int32_t)0);     // green
-msg.add((int32_t)0);     // blue
+msg.add((int32_t)255);   // green
+msg.add((int32_t)255);   // blue
 sendOsc(BROADCAST_MAC, msg);
-```
 
-**Receiving.** Put the bytes back into an `OSCMessage` with `fill()`, then check the address:
-
-```cpp
+// receiving
 OSCMessage msg;
-msg.fill(data, len);
-if (msg.fullMatch(TEAM "/led")) {
+msg.fill(p.data, p.len);
+if (msg.fullMatch("/magenta-blue-green/led")) {
   int r = msg.getInt(0);
   ...
 }
 ```
 
-**Why the team name?** Every board in the room on the same channel hears every broadcast. The team name at the start of the address lets each board ignore messages that aren't for it: `/green-red-red/led` doesn't match `/yellow-blue-blue/led`.
-
-The two messages of this example:
+Every board in the room hears every broadcast. That's why each board **signs** its messages with its own name: the receiver can then ignore everyone except its `PARTNER`.
 
 | Address | Values | Meaning |
 |---|---|---|
-| `/yellow-blue-blue/led` | red, green, blue (0–255) | "show this colour" (broadcast) |
-| `/yellow-blue-blue/ack` | red, green, blue | "ok, I'm showing it" (unicast, back to the sender) |
+| `/<sender>/led` | red, green, blue (0–255) | "show this colour" (broadcast) |
+| `/<sender>/ack` | red, green, blue | "ok, showing it" (unicast, back to the sender) |
 
-> **About online tutorials:** most ESP-NOW examples on the internet were written for older versions of the ESP32 package and won't compile. Trust the code in this sketch and the links in [Sources](#sources).
+> Most ESP-NOW tutorials online were written for older versions of the ESP32 package and won't compile. Trust this code and the [Sources](#sources).
 
 ---
 
 ## Part 3. Use it in your own OSC sketches
 
-Have a sketch that sends or receives OSC over Wi-Fi, like `ESP8266sendMessage` or `ESP8266ReceiveMessage` from the OSC library? You can switch it to ESP-NOW. The OSC part **stays exactly the same**; you only swap the Wi-Fi/UDP part.
+Have a sketch that sends or receives OSC over Wi-Fi? The OSC part **stays the same**; you only swap the Wi-Fi/UDP part.
 
-### Step 1: copy the postman
-
-Copy the file **`EspNowOsc.h`** into your sketch's folder. Close and reopen your sketch: it appears as a second tab. Then add at the top of your sketch:
-
-```cpp
-#include "EspNowOsc.h"
-```
-
-### Step 2: swap the lines
+1. Copy **`EspNowOsc.h`** into your sketch's folder, reopen the sketch (it appears as a tab), and add `#include "EspNowOsc.h"` at the top.
+2. Swap these lines:
 
 | Remove (Wi-Fi + UDP) | Write instead (ESP-NOW) |
 |---|---|
-| `#include <WiFi.h>`, `#include <WiFiUdp.h>` | nothing: `EspNowOsc.h` includes what it needs |
-| `ssid`, `pass`, `WiFi.begin(…)` and the "connecting…" loop | `setupEspNow(1);` (1 = the channel; the same on all boards) |
-| `WiFiUDP Udp;` and `Udp.begin(…)` | nothing |
-| `IPAddress outIp(…)` and the port number | `BROADCAST_MAC` (everyone) |
+| `#include <WiFi.h>`, `#include <WiFiUdp.h>` | nothing |
+| `ssid`, `pass`, `WiFi.begin(…)`, the "connecting…" loop | `setupEspNow(1);` (the channel, same on all boards) |
+| `WiFiUDP Udp;`, `Udp.begin(…)` | nothing |
+| `IPAddress outIp(…)`, the port | `BROADCAST_MAC` |
 | `Udp.beginPacket(…)`, `msg.send(Udp)`, `Udp.endPacket()` | `sendOsc(BROADCAST_MAC, msg);` |
-| `Udp.parsePacket()` and the `msg.fill(Udp.read())` loop | `while (receivePacket(p))` (see below) |
+| `Udp.parsePacket()` and the `msg.fill(Udp.read())` loop | `while (receivePacket(p))`, see below |
 
-Everything else (`dispatch`, `route`, `getInt`, `empty`, bundles) stays.
-
-### Sending: before and after
+Everything else (`dispatch`, `route`, `getInt`, bundles) stays.
 
 ```cpp
-// BEFORE (Wi-Fi + UDP)                  // AFTER (ESP-NOW)
-OSCMessage msg("/test");                 OSCMessage msg("/test");
-msg.add("hello, osc.");                  msg.add("hello, osc.");
-Udp.beginPacket(outIp, outPort);         sendOsc(BROADCAST_MAC, msg);
+// BEFORE (Wi-Fi + UDP)                    // AFTER (ESP-NOW)
+Udp.beginPacket(outIp, outPort);           sendOsc(BROADCAST_MAC, msg);
 msg.send(Udp);
 Udp.endPacket();
-msg.empty();                             msg.empty();
 ```
 
-### Receiving: before and after
-
-**Before (Wi-Fi + UDP):**
-
 ```cpp
-void loop() {
+// BEFORE (Wi-Fi + UDP)
+OSCMessage msg;
+int size = Udp.parsePacket();
+if (size > 0) {
+  while (size--) msg.fill(Udp.read());
+  if (!msg.hasError()) msg.dispatch("/led", led);
+}
+
+// AFTER (ESP-NOW)
+Packet p;
+while (receivePacket(p)) {
   OSCMessage msg;
-  int size = Udp.parsePacket();
-  if (size > 0) {
-    while (size--) msg.fill(Udp.read());
-    if (!msg.hasError()) msg.dispatch("/led", led);
-  }
+  msg.fill(p.data, p.len);
+  if (!msg.hasError()) msg.dispatch("/led", led);
 }
 ```
 
-**After (ESP-NOW):**
+**Good to know**
 
-```cpp
-void loop() {
-  Packet p;
-  while (receivePacket(p)) {                         // open the mailbox
-    OSCMessage msg;
-    msg.fill(p.data, p.len);                         // whole message at once
-    if (!msg.hasError()) msg.dispatch("/led", led);  // your led() function, unchanged
-  }
-}
-```
-
-### Good to know
-
-- **No port numbers.** Use the OSC address to say who a message is for, like the `/yellow-blue-blue/...` prefix.
-- **Max 250 bytes.** Normal messages fit easily. Very big [bundles](https://en.wikipedia.org/wiki/Open_Sound_Control#Design) may not: send several smaller messages instead.
-- **Your laptop can't hear ESP-NOW.** To get messages into Max, Pure Data, TouchDesigner or Processing, plug one Barduino into the computer as a **bridge**. It receives ESP-NOW and passes the same OSC bytes over USB with [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol), just like the library's `Serial…` examples:
+- **No port numbers.** Put who a message is for (or from) in the OSC address, like `/yellow-blue-blue/...`.
+- **Max 250 bytes** per message. Send big [bundles](https://en.wikipedia.org/wiki/Open_Sound_Control#Design) as several smaller messages.
+- **Your laptop can't hear ESP-NOW.** For Max, Pure Data, TouchDesigner or Processing, plug one Barduino into the computer as a **bridge**: it receives ESP-NOW and passes the same OSC bytes over USB with [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol), like the OSC library's `Serial…` examples. Don't use `Serial.print()` on the bridge.
 
   ```cpp
   #include <SLIPEncodedSerial.h>
@@ -399,71 +301,51 @@ void loop() {
   SLIPSerial.endPacket();
   ```
 
-  On the bridge, don't use `Serial.print()` for other things: it would mix with the OSC data.
-
 ---
 
 ## Part 4. Out in the real world
 
-On the table everything works. In a big room, a park or a crowd, the radio decides if your project works. Two rules: **plan for it**, and **test in the real place**.
+On the table everything works. On site, the radio decides. **Test in the real place.**
 
-### 4.1 How far does it reach?
+### 4.1 Range
 
-There's no single number, because it depends on the place. [1] What you can do:
+There's no single number: it depends on the place. [1] Walk away with one board and watch the signal bars. When `no ack yet, resending` starts to appear, you've found your **real** range. To go further:
 
-- **Turn up the power.** This sets the maximum, 20 [dBm](https://en.wikipedia.org/wiki/DBm). [5] Put it in `setup()`, after `setupEspNow()`:
+- **Full power** (20 dBm [5]), in `setup()` after `setupEspNow()`:
   ```cpp
-  esp_wifi_set_max_tx_power(84);   // in steps of 0.25 dBm: 84 = 20 dBm
+  esp_wifi_set_max_tx_power(84);   // steps of 0.25 dBm: 84 = 20 dBm
   ```
-- **Long Range mode.** Espressif quotes it at up to **1 km**, but only in [line of sight](https://en.wikipedia.org/wiki/Line-of-sight_propagation): open space, the boards "seeing" each other. [2] Add this on **every** board, in the `EspNowOsc.h` tab, right after `WiFi.mode(WIFI_STA)`:
+- **Long Range mode**: up to **1 km** in open space, with the boards "seeing" each other [2]. Slower. On **every** board, in `EspNowOsc.h` right after `WiFi.mode(WIFI_STA)`:
   ```cpp
   esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
   ```
-  It's slower, so use it only when you need the distance.
 
 ### 4.2 What blocks the signal
 
-The radio uses [2.4 GHz](https://en.wikipedia.org/wiki/ISM_radio_band), the same as Wi-Fi, Bluetooth and microwave ovens.
+The radio uses [2.4 GHz](https://en.wikipedia.org/wiki/ISM_radio_band), like Wi-Fi and Bluetooth.
 
-- **The antenna is the zigzag copper line at the end of the silver module.** [4] Keep it free: no fingers, no metal, no batteries or wires on top.
-- **Metal blocks the signal.** No metal boxes. Inside any case, leave at least **15 mm of free space all around the antenna**. [3]
-- **People and water absorb the signal.** A crowd between two boards makes the range much shorter. Mount boards high, above people's heads.
-- **Walls.** Concrete and brick block much more than wood or glass. Boards that can "see" each other work best.
-- **Busy air.** A building full of Wi-Fi networks means more lost messages. Try another channel (1, 6 and 11 are the usual choices), the same on all boards.
+- **Keep the antenna free** (the zigzag line at the end of the silver module [4]): no fingers, metal, batteries or wires on it.
+- **Metal blocks.** No metal boxes; in any case, leave **15 mm** free around the antenna. [3]
+- **People and water absorb.** A crowd shortens the range a lot: mount boards high.
+- **Walls.** Concrete and brick block much more than wood or glass.
+- **Busy air.** Many Wi-Fi networks around? Try channel 1, 6 or 11, the same on all boards.
 
-### 4.3 Measure it: signal strength
-
-Your phone shows signal bars. Boards have the same thing: **[RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indicator)**, a negative number in dBm. **Closer to 0 = stronger.** For example, -40 is strong and -85 is weak. ESP-NOW gives it to you with every message. [5]
-
-The example already prints it for every colour it receives, as `(signal -79 dBm)`. How to read it is in [Reading the Serial Monitor](#reading-the-serial-monitor). In your own sketches it's `p.rssi`.
-
-Walk around with one board and watch the number drop. When `no ack yet, resending` starts to appear, you've found the edge. That is your **real** range, in that place.
-
-### 4.4 More than two boards
-
-How boards are connected is called the [network topology](https://en.wikipedia.org/wiki/Network_topology). With ESP-NOW you'll mostly use these:
+### 4.3 More than two boards
 
 | Shape | How | Example |
 |---|---|---|
-| **One to one** | unicast | two boards that always work together |
-| **One to many** | broadcast | this example: one touch, everyone hears it |
-| **Many to one** | everyone sends to one board | many sensors → one bridge board on the computer |
-| **Many to many** | everyone broadcasts and listens | a group sharing one `TEAM` name. See *File → Examples → ESP_NOW → ESP_NOW_Network*. |
+| **One to one** | unicast, or `PARTNER` set | this example, paired |
+| **One to many** | broadcast | one board triggers a whole installation |
+| **Many to one** | everyone sends to one board | many sensors → one bridge on the computer |
+| **Many to many** | everyone broadcasts and listens | `PARTNER` left empty |
 
-**What about a [mesh](https://en.wikipedia.org/wiki/Mesh_networking)?** ESP-NOW does **not** pass messages along by itself: a message only reaches the boards that hear the sender directly. [1] To cover a bigger space, some boards can **repeat** what they receive. Then each message needs:
+ESP-NOW is **not** a [mesh](https://en.wikipedia.org/wiki/Mesh_networking): a message only reaches boards that hear the sender directly. [1] To cover more space, some boards can **repeat** what they receive. Add an **ID** to each message (so nobody repeats it twice) and a **hop counter** that goes down at each repeat (like a [time to live](https://en.wikipedia.org/wiki/Time_to_live)), e.g. `/yellow-blue-blue/led <id> <hops> <r> <g> <b>`. Keep hops at 2–3.
 
-- an **ID number**, so a board ignores a message it has already repeated,
-- a **hop counter** (like [time to live](https://en.wikipedia.org/wiki/Time_to_live)) that goes down by 1 at each repeat and stops at 0.
+### 4.4 Limits
 
-For example: `/yellow-blue-blue/led <id> <hops> <r> <g> <b>`. Keep the hops small (2–3): every repeat adds delay.
-
-### 4.5 Limits and safety
-
-- **250 bytes** per message. [1]
-- **20 peers** at most in the contact list. [1]
-- **Same channel for everyone.** A board that is also connected to a Wi-Fi router has to use the router's channel, so all the others must too. [1]
-- **"Sent" doesn't mean "done".** ESP-NOW only knows the other radio received it, not that the other sketch used it. [1] That's why this example has its own "ok, I'm red" answer.
-- **Anyone nearby can listen.** Broadcast messages can't be [encrypted](https://en.wikipedia.org/wiki/Encryption). [1] Fine in class. For a public installation, read the encryption part of the ESP-NOW guide [1].
+- **250 bytes** per message, **20 peers** at most. [1]
+- **Same channel for everyone.** A board also connected to a router must use the router's channel, and so must all the others. [1]
+- **Anyone nearby can listen.** Broadcasts can't be [encrypted](https://en.wikipedia.org/wiki/Encryption). Fine in class; for a public installation see the ESP-NOW guide. [1]
 
 ---
 
@@ -471,26 +353,26 @@ For example: `/yellow-blue-blue/led <id> <hops> <r> <g> <b>`. Keep the hops smal
 
 | Problem | Try this |
 |---|---|
-| The computer doesn't see the board | Use another USB cable (some only charge). Plug directly into the computer, not a hub. Hold BOOT, press RESET, release BOOT. |
-| Serial Monitor is empty | Tools → USB CDC On Boot: **Enabled**. Speed 115200. Press RESET after opening the monitor. |
-| Baselines print as `0`, pads do nothing | You have ESP32 package 4.0.0. Install **3.3.13** in Boards Manager. |
-| The NeoPixel never lights | Check that the NeoPixel is soldered on the board. |
-| `no answer from partner` | Is the other board on? Same `TEAM` name? Same `ESPNOW_CHANNEL`? |
-| Works on the table, not in the room | See [Part 4](#part-4-out-in-the-real-world): check the signal strength, keep metal and people away from the antenna, try another channel. |
-| The colour turns on and off by itself | The pads are too sensitive: raise `TOUCH_THRESHOLD` (e.g. `1.5`). |
-| Touching does nothing | Lower `TOUCH_THRESHOLD` (e.g. `1.15`). Press RESET without touching the pads. |
-| Another pair's board changes my colour | You both use the same `TEAM` name. |
+| The computer doesn't see the board | Another USB cable (some only charge). No hub. Hold BOOT, press RESET, release BOOT. |
+| Serial Monitor is empty | Tools → USB CDC On Boot **Enabled**. Speed 115200. Press RESET. |
+| Baseline prints `0`, touch does nothing | You have ESP32 package 4.0.0: install **3.3.13**. |
+| The NeoPixel never lights | Check that it's soldered. |
+| `no answer…` | Other board on? `PARTNER` spelled exactly? Same `ESPNOW_CHANNEL`? |
+| The light flickers by itself | Raise `TOUCH_THRESHOLD` (e.g. `1.5`). |
+| Touching does nothing | Lower `TOUCH_THRESHOLD` (e.g. `1.15`). Press RESET without touching the pad. |
+| Another board changes my light | Set `PARTNER`. Already set? Another board shares your partner's name: swap one. |
+| Works on the table, not on site | See [Part 4](#part-4-out-in-the-real-world). |
 
 ---
 
 ## Sources
 
-The numbers like [1] in the text point here. These are written by Espressif, the company that makes the chip. When a tutorial online says something different, trust these, and check which version of the ESP32 package the tutorial used.
+Written by Espressif, who make the chip. If a tutorial says something different, trust these.
 
-1. [ESP-NOW guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/network/esp_now.html) (Espressif)
-2. [Wi-Fi guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/wifi.html), for the Long Range mode (Espressif)
-3. [Hardware design guide: antenna placement](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/pcb-layout-design.html) (Espressif)
-4. [ESP32-S3-WROOM-1 datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf), for the module on the Barduino and its radio sensitivity (-98.2 dBm at 1 Mbps, table "RX Sensitivity") (Espressif)
-5. The ESP32 package's own files `esp_wifi.h` and `esp_now.h`, for power and signal strength (installed with the board package)
-6. [Arduino ESP-NOW reference](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/espnow.html), and the examples in *File → Examples → ESP_NOW* (Espressif)
+1. [ESP-NOW guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/network/esp_now.html)
+2. [Wi-Fi guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/wifi.html), Long Range mode
+3. [Hardware design guide: antenna placement](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/pcb-layout-design.html)
+4. [ESP32-S3-WROOM-1 datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf): the Barduino's module, RX sensitivity -98.2 dBm at 1 Mbps
+5. The ESP32 package's `esp_wifi.h` and `esp_now.h` (installed with the board package): power and signal strength
+6. [Arduino ESP-NOW reference](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/espnow.html) and *File → Examples → ESP_NOW*
 7. [Barduino docs](https://fablabbcn-projects.gitlab.io/electronics/barduino-docs/) (Fab Lab Barcelona)
