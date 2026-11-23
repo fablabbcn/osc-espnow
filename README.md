@@ -6,13 +6,15 @@ That works in the lab. On site (a street, a park, an empty building) there is us
 
 ## The example
 
-**Touch pad T7 on one board, and the NeoPixel on the other board turns white.** Let go, and it turns off. It works both ways, and both boards run **the same sketch**.
+**Press pad T7 on one board: the harder you press, the brighter the NeoPixel on the other board glows.** It works both ways, and both boards run **the same sketch**.
 
 ```
-   Board A                                        Board B
-   touch T7  ──── "show white!" ───────────────►  NeoPixel turns white
-   LED blinks ◄─── "ok, showing it" ────────────┘
+   Board A                                          Board B
+   press T7  ── /yellow-blue-blue/touch 180 ──►  NeoPixel glows white
+   NeoPixel  ◄── /magenta-blue-green/touch 90 ──  press T7
 ```
+
+One message, one value: that's the whole conversation.
 
 | Part | What you get |
 |---|---|
@@ -46,7 +48,7 @@ Stuck? See **[Help](#help)** at the end.
 
 1. Upload the sketch to **both** boards. If it fails: hold **BOOT**, press **RESET**, release **BOOT**, upload again.
 2. Press **RESET** and **don't touch the pad** while the board starts: it is measuring it.
-3. The NeoPixel blinks **three colours**, one second each, e.g. *yellow, blue, blue*. That's the board's **name**. Press **BOOT** to see it again.
+3. The NeoPixel blinks **three colours**, one second each, e.g. *yellow, blue, blue*. That's the board's **name**. Press **RESET** to see it again.
 4. Write down both names. A sticker on each board helps.
 
 Nobody chooses the name: it comes from the board's [MAC address](https://en.wikipedia.org/wiki/MAC_address), a number fixed in every chip. A [hash function](https://en.wikipedia.org/wiki/Hash_function) mixes it first, so boards with almost the same MAC still get very different colours.
@@ -66,7 +68,7 @@ Upload each board with its own line.
 
 ### Play
 
-Touch T7 on one board and look at the **other** one. 🎉
+Press T7 on one board, softly then harder, and look at the **other** one. 🎉
 
 ### Reading the Serial Monitor
 
@@ -77,9 +79,9 @@ The Serial Monitor is where the board tells you what it's doing.
 
 One monitor shows one board. To watch both, open a second Arduino IDE window with the other port.
 
-![Serial Monitor of board green-red-red receiving white and off from board magenta-blue-green](images/serial-monitor.png)
+![Serial Monitor of board green-red-red receiving touch values from board magenta-blue-green](images/serial-monitor.png)
 
-*Board `green-red-red` receiving from `magenta-blue-green`, a few centimetres away: -18 to -26 dBm, full bars.*
+*Board `green-red-red` receiving from `magenta-blue-green`: 0 while nobody touches, then the value rises as the pad is pressed.*
 
 At startup:
 
@@ -89,29 +91,26 @@ My name:        yellow-blue-blue
 Partner:        magenta-blue-green
 Measuring the touch pad, don't touch it...
   baseline 283836
-Ready. Touch the pad!
+Ready. Press the pad!
 ```
 
 Then, while you play:
 
 | Line | What happened |
 |---|---|
-| `-> /yellow-blue-blue/led 255 255 255` | you touched the pad: this board sent white |
-| `<- /magenta-blue-green/led 255 255 255  ■■■□□ -72 dBm` | the other board sent white; your NeoPixel shows it |
-| `<- /magenta-blue-green/led 0 0 0  …` | the other person let go: light off |
-| `<- /magenta-blue-green/ack: partner shows the colour  ■■■□□ -74 dBm` | the other board confirmed; your small red LED blinks |
-| `no ack yet, resending` | no answer yet, trying again. Often means a weak signal. |
-| `no answer…` | it gave up after 5 tries |
+| `-> /yellow-blue-blue/touch 180` | you pressed the pad: this board sent how hard (0–255) |
+| `<- /magenta-blue-green/touch 90   signal ■■■□□ ok (-72 dBm)` | the other board sent a value; your NeoPixel glows that bright |
+| `<- /magenta-blue-green/touch 0   signal ■■■□□ ok (-73 dBm)` | nobody touching. This comes once a second, so you always see the signal. |
 
-**The signal.** `■■■□□ -72 dBm` is how strong the message arrived. The number is in [dBm](https://en.wikipedia.org/wiki/DBm), always negative: **closer to 0 = stronger**. The radio stops hearing around **-98 dBm** [4], so the gap between your number and -98 is your safety margin.
+**The signal.** Each `<-` line ends with how well the message arrived:
 
-| Bars | Signal | In practice |
-|---|---|---|
-| ■■■■■ ■■■■□ | above -65 | solid |
-| ■■■□□ ■■□□□ | -65 to -85 | works; some resending in a busy room |
-| ■□□□□ □□□□□ | below -85 | at the edge: expect lost messages |
+| You see | Means |
+|---|---|
+| `■■■■■ strong` | all good |
+| `■■■□□ ok` | works; in a busy room some messages may get lost |
+| `■□□□□ weak` | at the edge: move closer or higher |
 
-The number jumps a bit on every line; look at the trend. **Try it:** cover the antenna (the zigzag line at the end of the silver module) with your hand, or turn a board around, and watch it change.
+The number is the exact value in [dBm](https://en.wikipedia.org/wiki/DBm): always negative, **closer to 0 = stronger**. Below about -98 nothing arrives [4]. **Try it:** cover the antenna (the zigzag line at the end of the silver module) with your hand and watch it drop.
 
 ---
 
@@ -124,38 +123,35 @@ Think of sending a letter:
                   (the letter)       (the postman)
 ```
 
-- **[OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)** is the *letter*: an address like `/yellow-blue-blue/led` and values like `255 255 255`. You already know it.
+- **[OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)** is the *letter*: an address like `/yellow-blue-blue/touch` and a value like `180`. You already know it.
 - **ESP-NOW** is the *postman*: it carries the letter through the air.
 
 Last week the postman was Wi-Fi with [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol). We keep the letter and change the postman. The two tabs follow that split:
 
 | Tab | What's inside |
 |---|---|
-| `osc-espnow.ino` | **this example**: board name, touch pad, the conversation |
+| `osc-espnow.ino` | **this example**: board name, touch, light |
 | `EspNowOsc.h` | **the postman**: everything that makes OSC travel over ESP-NOW. Reusable in any project (Part 3). |
 
 ### 2.1 From a finger to a message
 
-`touchRead()` gives a number, and a finger makes it go **up**. At startup the board measures the pad untouched (the *baseline*). Touched means: clearly above it.
+`touchRead()` gives a number, and a finger makes it go **up**: the more skin touches the pad, the higher. At startup the board measures the pad untouched, the *baseline*. `readPressure()` compares the reading with it and turns that into 0–255:
+
+| Reading compared to the baseline | Pressure |
+|---|---|
+| below `TOUCH_LIGHT` (1.05×) | 0, not touched |
+| between the two | in between |
+| `TOUCH_HARD` (2×) or more | 255, pressed hard |
+
+`sendTouch()` runs 50 times a second, but only sends when the pressure **changes**, and once a second anyway:
 
 ```cpp
-bool isTouched() {
-  return touchRead(TOUCH_PIN) > baseline * TOUCH_THRESHOLD;
-}
+OSCMessage msg("/yellow-blue-blue/touch");   // in the sketch: "/" + myName + "/touch"
+msg.add((int32_t)pressure);
+sendOsc(BROADCAST_MAC, msg);
 ```
 
-`readTouchPad()` runs every 20 ms, but only sends when something **changes**:
-
-```cpp
-bool touched = isTouched();
-if (touched == wasTouched) return;   // nothing new: send nothing
-wasTouched = touched;
-
-if (touched) startSending(SEND_R, SEND_G, SEND_B);   // white
-else         startSending(0, 0, 0);                  // off
-```
-
-Without that check, holding your finger down would send 50 messages a second. To send another colour, change `SEND_R`, `SEND_G`, `SEND_B` in the settings.
+Why once a second? A broadcast can get lost, and nobody tells you. If the last "0" goes missing, the other light would stay on. The next message puts it right.
 
 ### 2.2 ESP-NOW in one minute
 
@@ -202,40 +198,28 @@ void loop() {
 
 Each `Packet` has who sent it (`p.from`), the bytes (`p.data`, `p.len`) and the signal strength (`p.rssi`).
 
-### 2.5 Talking both ways: "got it!"
-
-The colour goes out as a **broadcast**, and nobody confirms a broadcast. So the receiving board **answers** by unicast, straight back to the sender: an [acknowledgement](https://en.wikipedia.org/wiki/Acknowledgement_(data_networks)), or "ack".
-
-- Ack arrives → the small red LED blinks.
-- No ack within 0.2 s → send again, up to 5 times.
-
-### 2.6 OSC on top of ESP-NOW
+### 2.5 OSC on top of ESP-NOW
 
 An OSC message is a row of bytes, and ESP-NOW carries bytes. So the OSC code is the one you know; only the sending line changes.
 
 ```cpp
 // sending
-OSCMessage msg("/yellow-blue-blue/led");
-msg.add((int32_t)255);   // red
-msg.add((int32_t)255);   // green
-msg.add((int32_t)255);   // blue
+OSCMessage msg("/yellow-blue-blue/touch");
+msg.add((int32_t)180);
 sendOsc(BROADCAST_MAC, msg);
 
 // receiving
 OSCMessage msg;
 msg.fill(p.data, p.len);
-if (msg.fullMatch("/magenta-blue-green/led")) {
-  int r = msg.getInt(0);
+if (msg.fullMatch("/magenta-blue-green/touch")) {
+  int pressure = msg.getInt(0);
   ...
 }
 ```
 
 Every board in the room hears every broadcast. That's why each board **signs** its messages with its own name: the receiver can then ignore everyone except its `PARTNER`.
 
-| Address | Values | Meaning |
-|---|---|---|
-| `/<sender>/led` | red, green, blue (0–255) | "show this colour" (broadcast) |
-| `/<sender>/ack` | red, green, blue | "ok, showing it" (unicast, back to the sender) |
+To send something else (a sensor, a knob), keep the same pattern: `/<my name>/<what>` and a value.
 
 > Most ESP-NOW tutorials online were written for older versions of the ESP32 package and won't compile. Trust this code and the [Sources](#sources).
 
@@ -309,7 +293,7 @@ On the table everything works. On site, the radio decides. **Test in the real pl
 
 ### 4.1 Range
 
-There's no single number: it depends on the place. [1] Walk away with one board and watch the signal bars. When `no ack yet, resending` starts to appear, you've found your **real** range. To go further:
+There's no single number: it depends on the place. [1] Walk away with one board and watch the signal bars on the other. When the lines stop coming (one a second at least), you've found your **real** range. To go further:
 
 - **Full power** (20 dBm [5]), in `setup()` after `setupEspNow()`:
   ```cpp
@@ -339,7 +323,7 @@ The radio uses [2.4 GHz](https://en.wikipedia.org/wiki/ISM_radio_band), like Wi-
 | **Many to one** | everyone sends to one board | many sensors → one bridge on the computer |
 | **Many to many** | everyone broadcasts and listens | `PARTNER` left empty |
 
-ESP-NOW is **not** a [mesh](https://en.wikipedia.org/wiki/Mesh_networking): a message only reaches boards that hear the sender directly. [1] To cover more space, some boards can **repeat** what they receive. Add an **ID** to each message (so nobody repeats it twice) and a **hop counter** that goes down at each repeat (like a [time to live](https://en.wikipedia.org/wiki/Time_to_live)), e.g. `/yellow-blue-blue/led <id> <hops> <r> <g> <b>`. Keep hops at 2–3.
+ESP-NOW is **not** a [mesh](https://en.wikipedia.org/wiki/Mesh_networking): a message only reaches boards that hear the sender directly. [1] To cover more space, some boards can **repeat** what they receive. Add an **ID** to each message (so nobody repeats it twice) and a **hop counter** that goes down at each repeat (like a [time to live](https://en.wikipedia.org/wiki/Time_to_live)), e.g. `/yellow-blue-blue/touch <id> <hops> <pressure>`. Keep hops at 2–3.
 
 ### 4.4 Limits
 
@@ -357,9 +341,10 @@ ESP-NOW is **not** a [mesh](https://en.wikipedia.org/wiki/Mesh_networking): a me
 | Serial Monitor is empty | Tools → USB CDC On Boot **Enabled**. Speed 115200. Press RESET. |
 | Baseline prints `0`, touch does nothing | You have ESP32 package 4.0.0: install **3.3.13**. |
 | The NeoPixel never lights | Check that it's soldered. |
-| `no answer…` | Other board on? `PARTNER` spelled exactly? Same `ESPNOW_CHANNEL`? |
-| The light flickers by itself | Raise `TOUCH_THRESHOLD` (e.g. `1.5`). |
-| Touching does nothing | Lower `TOUCH_THRESHOLD` (e.g. `1.15`). Press RESET without touching the pad. |
+| No `<-` lines at all | Other board on? `PARTNER` spelled exactly? Same `ESPNOW_CHANNEL`? |
+| The light flickers by itself | Raise `TOUCH_LIGHT` (e.g. `1.15`). |
+| Touching does nothing | Press RESET without touching the pad, then try again. |
+| Never gets really bright | Lower `TOUCH_HARD` (e.g. `1.5`). |
 | Another board changes my light | Set `PARTNER`. Already set? Another board shares your partner's name: swap one. |
 | Works on the table, not on site | See [Part 4](#part-4-out-in-the-real-world). |
 
